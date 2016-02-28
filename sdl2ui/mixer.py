@@ -45,3 +45,11 @@ class Channel(object):
 
     def resume(self):
         sdlmixer.Mix_Resume(self.index)
+
+    def get_volume(self):
+        return sdlmixer.Mix_Volume(self.index, -1)
+
+    def set_volume(self, value):
+        sdlmixer.Mix_Volume(self.index, int(value))
+
+    volume = property(get_volume, set_volume)
