@@ -52,22 +52,18 @@ class BaseResource(object):
     def tint(self, *args, **kwargs):
         raise NotImplementedError("object %s can not be tint" % type(self))
 
+    def close(self):
+        pass
+
 
 class Image(BaseResource):
     regex = re.compile(r"^.*\.(bmp|png|gif|jpe?g|xbm|lbm|pcx|tga|tiff?)$")
-
-    def get_image(self):
-        if self.filename.lower().endswith('.bmp'):
-            return sdl2.SDL_LoadBMP(self.filepath.encode())
-        else:
-            from sdl2 import sdlimage
-            return sdlimage.IMG_Load(self.filepath.encode())
 
     def load(self):
         self.font = None
         self.font_w = None
         self.font_h = None
-        image = self.get_image()
+        image = self._get_image()
         if not image:
             raise ValueError(
                 "can't load resource %r: %s"
@@ -78,6 +74,17 @@ class Image(BaseResource):
             self.rect = sdl2.SDL_Rect(0, 0, image.contents.w, image.contents.h)
         finally:
             sdl2.SDL_FreeSurface(image)
+
+    def close(self):
+        if getattr(self, 'texture', None):
+            sdl2.SDL_DestroyTexture(self.texture)
+
+    def _get_image(self):
+        if self.filename.lower().endswith('.bmp'):
+            return sdl2.SDL_LoadBMP(self.filepath.encode())
+        else:
+            from sdl2 import sdlimage
+            return sdlimage.IMG_Load(self.filepath.encode())
 
     def draw(self, **kwargs):
         if 'rect' in kwargs:
@@ -112,10 +119,6 @@ class Image(BaseResource):
             yield
         finally:
             sdl2.SDL_SetTextureColorMod(self.texture, 0xff, 0xff, 0xff, 0xff)
-
-    def __del__(self):
-        if getattr(self, 'texture', None):
-            sdl2.SDL_DestroyTexture(self.texture)
 
     def make_font(self, w, h, mapping):
         self.font = mapping

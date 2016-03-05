@@ -109,13 +109,13 @@ class App(object):
 
     def _destroy_extensions(self):
         for k in list(self.extensions.keys()):
-            del self.extensions[k]
+            self.extensions[k].close()
 
     def _destroy_resources(self):
         for k in list(self.resources.keys()):
-            del self.resources[k]
+            self.resources[k].close()
 
-    def __del__(self):
+    def _clean_up(self):
         self.logger.info("Destroying application: %s", self.name)
         self._destroy_resources()
         self._destroy_extensions()
@@ -191,6 +191,7 @@ class App(object):
             delay = dt - (t2 - t1)
             if delay > 0:
                 sdl2.timer.SDL_Delay(delay)
+        self._clean_up()
 
     def load_resource(self, key, filename):
         self.logger.info("Loading %r: %s", key, filename)

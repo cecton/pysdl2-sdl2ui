@@ -18,10 +18,11 @@ class Mixer(sdl2ui.Extension):
         status = sdlmixer.Mix_OpenAudio(
             self.frequency, self.format, self.channels, self.chunksize)
         if status != 0:
-            raise ValueError("can't open mixer: %s" % sdlmixer.Mix_GetError())
+            raise ValueError(
+                "can't open mixer: %s" % sdlmixer.Mix_GetError().decode())
         self.app.register('play', self.play)
 
-    def __del__(self):
+    def close(self):
         self.logger.info("Destroying mixer...")
         sdlmixer.Mix_HaltChannel(-1)
         sdlmixer.Mix_CloseAudio()
@@ -61,8 +62,8 @@ class Audio(sdl2ui.resource.BaseResource):
         if not self.sample:
             raise ValueError(
                 "can't load resource %r: %s"
-                % (self.filename, sdlmixer.Mix_GetError()))
+                % (self.filename, sdlmixer.Mix_GetError().decode()))
 
-    def __del__(self):
+    def close(self):
         if getattr(self, 'sample', None):
             sdlmixer.Mix_FreeChunk(self.sample)
