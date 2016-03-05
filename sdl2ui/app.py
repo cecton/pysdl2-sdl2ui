@@ -21,6 +21,11 @@ class App(object):
     window_flags = sdl2.SDL_WINDOW_HIDDEN
     renderer_flags = 0
     default_extensions = []
+    default_handlers = {
+        sdl2.SDL_QUIT: ['_quit'],
+        sdl2.SDL_KEYDOWN: ['_update_keys'],
+        sdl2.SDL_KEYUP: ['_update_keys'],
+    }
     default_components = []
     default_resources = [('font-6', 'font-6.png')]
     width = None
@@ -38,6 +43,7 @@ class App(object):
         self.window_flags = kwargs.get('window_flags', self.window_flags)
         self.renderer_flags = kwargs.get('renderer_flags', self.renderer_flags)
         self.extensions = {}
+        self.event_handlers = {}
         self.components = OrderedDict()
         self.resources = {}
         self.tints = []
@@ -48,6 +54,13 @@ class App(object):
         self.renderer = None
         self.window = None
         self.logger.info("Initializing application: %s", self.name)
+        for event_type, handler_names in self.default_handlers.items():
+            for handler_name in handler_names:
+                self.register_event_handler(
+                    event_type, getattr(self, handler_name))
+        for event_type, handlers in kwargs.get('event_handlers', []):
+            for handler in handlers:
+                self.register_event_handler(event_type, handler)
         for extension_class in self.default_extensions:
             self.add_extension(extension_class)
         for extension_class in kwargs.get('extensions', []):
@@ -113,13 +126,18 @@ class App(object):
             sdl2.SDL_DestroyWindow(self.window)
         sdl2.SDL_Quit()
 
+    def _quit(self, event):
+        self.quit = True
+
+    def _update_keys(self, event):
+        self.keys = sdl2.SDL_GetKeyboardState(None)
+
     def _poll_events(self):
         event = sdl2.SDL_Event()
         while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
-            if event.type == sdl2.SDL_QUIT:
-                self.quit = True
-            elif event.type in (sdl2.SDL_KEYDOWN, sdl2.SDL_KEYUP):
-                self.keys = sdl2.SDL_GetKeyboardState(None)
+            if event.type in self.event_handlers:
+                for event_handler in self.event_handlers[event.type]:
+                    event_handler(event)
 
     def _update_active_components(self):
         self._active_components = [
@@ -153,6 +171,9 @@ class App(object):
         if hasattr(self, attr):
             raise AttributeError("attribute already exists")
         setattr(self, attr, object)
+
+    def register_event_handler(self, event_type, handler):
+        self.event_handlers.setdefault(event_type, []).append(handler)
 
     def init(self):
         pass
