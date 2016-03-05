@@ -1,4 +1,4 @@
-from sdl2ui.app import App, Extension, Component
+from sdl2ui.app import App, Component
 
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 __author__ = 'Cecile Tonglet'

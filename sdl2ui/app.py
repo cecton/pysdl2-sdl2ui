@@ -11,6 +11,7 @@ except ImportError as ex:
         sys.exit("SDL2 library not found: %s" % ex)
 
 from sdl2ui.component import Component
+from sdl2ui.ext import Extension
 from sdl2ui.resource import load as resource_loader
 
 
@@ -218,12 +219,3 @@ class App(object):
 
     def write(self, resource_key, *args, **kwargs):
         return self._call_resource(resource_key, 'write', *args, **kwargs)
-
-
-class Extension(object):
-    def __init__(self, app):
-        self.app = app
-        self.init()
-
-    def init(self):
-        pass

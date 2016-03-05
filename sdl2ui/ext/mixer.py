@@ -2,11 +2,11 @@ import logging
 import re
 from sdl2 import sdlmixer
 
-import sdl2ui
+import sdl2ui.ext
 import sdl2ui.resource
 
 
-class Mixer(sdl2ui.Extension):
+class Mixer(sdl2ui.ext.Extension):
     logger = logging.getLogger(__name__)
     frequency = sdlmixer.MIX_DEFAULT_FREQUENCY
     format = sdlmixer.MIX_DEFAULT_FORMAT
