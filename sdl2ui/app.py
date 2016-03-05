@@ -50,10 +50,10 @@ class App(object):
         sdl2.SDL_Init(self.init_flags)
         self.window = self._get_window()
         self.renderer = self._get_renderer()
-        for key, resource in kwargs.get('resources', []):
-            self.load_resource(key, resource)
-        for key, resource in self._all_default_resources:
-            self.load_resource(key, resource)
+        for key, resource_file in self._all_default_resources:
+            self.load_resource(key, resource_file)
+        for key, resource_file in kwargs.get('resources', []):
+            self.load_resource(key, resource_file)
         self.resources['font-6'].make_font(4, 11,
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]~-_+@:/'., ")
@@ -62,8 +62,8 @@ class App(object):
         for component_class in self.default_components:
             self.add_component(component_class)
         self._update_active_components()
-        sdl2.SDL_ShowWindow(self.window)
         self.init()
+        sdl2.SDL_ShowWindow(self.window)
 
     @property
     def _all_default_resources(self):
