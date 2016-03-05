@@ -20,6 +20,7 @@ class App(object):
     init_flags = 0
     window_flags = sdl2.SDL_WINDOW_HIDDEN
     renderer_flags = 0
+    default_extensions = []
     default_components = []
     default_resources = [('font-6', 'font-6.png')]
     width = None
@@ -36,7 +37,7 @@ class App(object):
         self.init_flags = kwargs.get('init_flags', self.init_flags)
         self.window_flags = kwargs.get('window_flags', self.window_flags)
         self.renderer_flags = kwargs.get('renderer_flags', self.renderer_flags)
-        self.mixer = kwargs.get('mixer')
+        self.extensions = {}
         self.components = OrderedDict()
         self.resources = {}
         self.tints = []
@@ -47,6 +48,10 @@ class App(object):
         self.renderer = None
         self.window = None
         self.logger.info("Initializing application: %s", self.name)
+        for extension_class in self.default_extensions:
+            self.add_extension(extension_class)
+        for extension_class in kwargs.get('extensions', []):
+            self.add_extension(extension_class)
         sdl2.SDL_Init(self.init_flags)
         self.window = self._get_window()
         self.renderer = self._get_renderer()
@@ -89,6 +94,10 @@ class App(object):
             sdl2.SDL_RenderSetScale(renderer, self.zoom, self.zoom)
         return renderer
 
+    def _destroy_extensions(self):
+        for k in list(self.extensions.keys()):
+            del self.extensions[k]
+
     def _destroy_resources(self):
         for k in list(self.resources.keys()):
             del self.resources[k]
@@ -96,6 +105,7 @@ class App(object):
     def __del__(self):
         self.logger.info("Destroying application: %s", self.name)
         self._destroy_resources()
+        self._destroy_extensions()
         if self.renderer:
             sdl2.SDL_DestroyRenderer(self.renderer)
         if self.window:
@@ -125,12 +135,24 @@ class App(object):
             component.render()
         sdl2.SDL_RenderPresent(self.renderer)
 
+    def add_extension(self, extension_class):
+        assert issubclass(extension_class, Extension), \
+            "must be an Extension class"
+        if extension_class in self.extensions:
+            raise ValueError("extension already exists")
+        self.extensions[extension_class] = extension_class(self)
+
     def add_component(self, component_class):
         assert issubclass(component_class, Component), \
             "must be a Component class"
         if component_class in self.components:
             raise ValueError("component already exists")
         self.components[component_class] = component_class(self)
+
+    def register(self, attr, object):
+        if hasattr(self, attr):
+            raise AttributeError("attribute already exists")
+        setattr(self, attr, object)
 
     def init(self):
         pass
@@ -175,5 +197,11 @@ class App(object):
     def write(self, resource_key, *args, **kwargs):
         return self._call_resource(resource_key, 'write', *args, **kwargs)
 
-    def play(self, resource_key, *args, **kwargs):
-        return self._call_resource(resource_key, 'play', *args, **kwargs)
+
+class Extension(object):
+    def __init__(self, app):
+        self.app = app
+        self.init()
+
+    def init(self):
+        pass

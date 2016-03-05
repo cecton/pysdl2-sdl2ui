@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import os
 import re
 import sdl2
+import six
 
 import sdl2ui
 
@@ -13,7 +14,19 @@ if hasattr(__main__, '__file__'):
 PATH.append(os.path.join(os.path.dirname(sdl2ui.__file__), 'data'))
 
 
-class Resource(object):
+resource_classes = []
+
+
+class ResourceMetaclass(type):
+    def __new__(cls, name, bases, attrs):
+        new_class = super(ResourceMetaclass, cls).__new__(cls, name, bases, attrs)
+        if not name == 'BaseResource':
+            resource_classes.append(new_class)
+        return new_class
+
+
+@six.add_metaclass(ResourceMetaclass)
+class BaseResource(object):
     def __init__(self, app, filename):
         self.app = app
         self.filename = filename
@@ -39,11 +52,8 @@ class Resource(object):
     def tint(self, *args, **kwargs):
         raise NotImplementedError("object %s can not be tint" % type(self))
 
-    def play(self, *args, **kwargs):
-        raise NotImplementedError("object %s can not be play" % type(self))
 
-
-class Image(Resource):
+class Image(BaseResource):
     regex = re.compile(r"^.*\.(bmp|png|gif|jpe?g|xbm|lbm|pcx|tga|tiff?)$")
 
     def get_image(self):
@@ -111,29 +121,6 @@ class Image(Resource):
         self.font = mapping
         self.font_w = w
         self.font_h = h
-
-
-class Audio(Resource):
-    regex = re.compile(r"^.*\.(wav|flac|ogg|mod|mid|mp3)$")
-
-    def load(self):
-        from sdl2 import sdlmixer
-        self.sample = sdlmixer.Mix_LoadWAV(self.filepath.encode())
-        if not self.sample:
-            raise ValueError(
-                "can't load resource %r: %s"
-                % (self.filename, sdlmixer.Mix_GetError()))
-
-    def __del__(self):
-        if getattr(self, 'sample', None):
-            from sdl2 import sdlmixer
-            sdlmixer.Mix_FreeChunk(self.sample)
-
-    def play(self, channel=-1, loops=0):
-        return self.app.mixer.play(channel, self, loops)
-
-
-resource_classes = [Image, Audio]
 
 
 def load(app, filename):

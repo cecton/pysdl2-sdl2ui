@@ -16,6 +16,7 @@ VERSION_RE = re.compile(r'''__version__ = ['"]([0-9.]+)['"]''')
 
 requires = [
     'pysdl2 >= 0.9.3',
+    'six >= 1.10'
 ]
 
 
