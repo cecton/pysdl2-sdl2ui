@@ -45,12 +45,12 @@ class BaseJoystick(sdl2ui.ext.Extension):
 
 class BaseKeyboardJoystick(BaseJoystick):
     event_handlers = {
-        sdl2.SDL_JOYBUTTONDOWN: 'update_button',
+        sdl2.SDL_JOYBUTTONDOWN: 'button_down',
     }
     mapping = {
     }
 
-    def update_button(self, event):
+    def button_down(self, event):
         key = self.mapping.get(event.jbutton.button)
         if key:
             self.app.keys[key] = sdl2.SDL_TRUE
