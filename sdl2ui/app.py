@@ -51,7 +51,7 @@ class App(object):
         assert self.width, "missing argument width"
         assert self.height, "missing argument height"
         assert self.window_flags, "missing argument window_flags"
-        self.quit = False
+        self.running = True
         self.renderer = None
         self.window = None
         self.logger.info("Initializing application: %s", self.name)
@@ -108,10 +108,6 @@ class App(object):
             sdl2.SDL_RenderSetScale(renderer, self.zoom, self.zoom)
         return renderer
 
-    def _destroy_extensions(self):
-        for k in list(self.extensions.keys()):
-            self.extensions[k].close()
-
     def _destroy_resources(self):
         for k in list(self.resources.keys()):
             self.resources[k].close()
@@ -119,7 +115,6 @@ class App(object):
     def _clean_up(self):
         self.logger.info("Destroying application: %s", self.name)
         self._destroy_resources()
-        self._destroy_extensions()
         if self.renderer:
             sdl2.SDL_DestroyRenderer(self.renderer)
         if self.window:
@@ -127,8 +122,16 @@ class App(object):
             sdl2.SDL_DestroyWindow(self.window)
         sdl2.SDL_Quit()
 
+    def quit(self):
+        event = sdl2.SDL_Event()
+        event.type = sdl2.SDL_QUIT
+        for event_handler in self.event_handlers[sdl2.SDL_QUIT]:
+            event_handler(event)
+        sdl2.SDL_PumpEvents()
+        sdl2.SDL_FlushEvents(0, 32767)
+
     def _quit(self, event):
-        self.quit = True
+        self.running = False
 
     def _update_keys(self, event):
         self.keys = sdl2.SDL_GetKeyboardState(None)
@@ -183,16 +186,21 @@ class App(object):
         dt = int(1000 / self.fps)
         self.keys = sdl2.SDL_GetKeyboardState(None)
         self._render_components()
-        while not self.quit:
-            t1 = sdl2.timer.SDL_GetTicks()
-            self._poll_events()
-            if self._peek_components():
-                self._render_components()
-            t2 = sdl2.timer.SDL_GetTicks()
-            delay = dt - (t2 - t1)
-            if delay > 0:
-                sdl2.timer.SDL_Delay(delay)
-        self._clean_up()
+        try:
+            while self.running:
+                t1 = sdl2.timer.SDL_GetTicks()
+                self._poll_events()
+                if self._peek_components():
+                    self._render_components()
+                t2 = sdl2.timer.SDL_GetTicks()
+                delay = dt - (t2 - t1)
+                if delay > 0:
+                    sdl2.timer.SDL_Delay(delay)
+        except:
+            self.quit()
+            raise
+        finally:
+            self._clean_up()
 
     def load_resource(self, key, filename):
         self.logger.info("Loading %r: %s", key, filename)

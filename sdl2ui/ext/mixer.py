@@ -1,5 +1,6 @@
 import logging
 import re
+import sdl2
 from sdl2 import sdlmixer
 
 import sdl2ui.ext
@@ -21,9 +22,10 @@ class Mixer(sdl2ui.ext.Extension):
             raise ValueError(
                 "can't open mixer: %s" % sdlmixer.Mix_GetError().decode())
         self.app.register('play', self.play)
+        self.app.register_event_handler(sdl2.SDL_QUIT, self.close)
 
-    def close(self):
-        self.logger.info("Destroying mixer...")
+    def close(self, event):
+        self.logger.info("Closing mixer...")
         sdlmixer.Mix_HaltChannel(-1)
         sdlmixer.Mix_CloseAudio()
 
