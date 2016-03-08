@@ -126,7 +126,10 @@ class App(object):
         event = sdl2.SDL_Event()
         event.type = sdl2.SDL_QUIT
         for event_handler in self.event_handlers[sdl2.SDL_QUIT]:
-            event_handler(event)
+            try:
+                event_handler(event)
+            except Exception:
+                self.logger.exception("Error while exiting: %r", event_handler)
         sdl2.SDL_PumpEvents()
         sdl2.SDL_FlushEvents(0, 32767)
 

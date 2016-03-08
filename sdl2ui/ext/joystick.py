@@ -14,6 +14,7 @@ class BaseJoystick(sdl2ui.ext.Extension):
     index = 0
 
     def init(self):
+        self.joystick = None
         sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_JOYSTICK)
         for event_type, handler_name in self._all_event_handlers:
             self.app.register_event_handler(
