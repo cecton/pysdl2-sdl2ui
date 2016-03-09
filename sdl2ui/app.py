@@ -34,6 +34,11 @@ class App(object):
     zoom = 1
     fps = 60
 
+    @classmethod
+    def run(cls, **kwargs):
+        instance = cls(**kwargs)
+        instance.loop()
+
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', self.name)
         self.width = kwargs.get('width', self.width)
