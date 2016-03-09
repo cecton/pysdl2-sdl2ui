@@ -27,7 +27,7 @@ class BaseJoystick(sdl2ui.ext.Extension):
                 "Joystick %d found: %s",
                 self.index, sdl2.SDL_JoystickName(self.joystick).decode())
         else:
-            self.logger.warning("Could not find joystick %d", self.index)
+            self.logger.warning("Could not open joystick %d", self.index)
 
     def close(self, event):
         if sdl2.SDL_JoystickGetAttached(self.joystick):

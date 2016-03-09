@@ -28,9 +28,10 @@ def get_version():
 setup(
     name='pysdl2-sdl2ui',
     version=get_version(),
-    description='A Python library make simple UI using pysdl2',
+    description='A Python library to make simple UI using pysdl2',
     long_description=open('README.md').read(),
     author='Cecile Tonglet',
+    author_email='cecile.tonglet@gmail.com',
     url='https://github.com/cecton/pysdl2-sdl2ui',
     scripts=[],
     zip_safe=False,
