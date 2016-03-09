@@ -7,21 +7,24 @@ import sdl2ui.ext
 class BaseJoystick(sdl2ui.ext.Extension):
     logger = logging.getLogger(__name__)
     event_handlers = {
-        sdl2.SDL_QUIT: 'close',
-        sdl2.SDL_JOYDEVICEADDED: 'open',
-        sdl2.SDL_JOYDEVICEREMOVED: 'close',
     }
     index = 0
 
     def init(self):
         self.joystick = None
         sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_JOYSTICK)
-        for event_type, handler_name in self._all_event_handlers:
+        self.app.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.open)
+        self.app.register_event_handler(sdl2.SDL_JOYDEVICEREMOVED, self.close)
+        self.app.register_event_handler(sdl2.SDL_QUIT, self.close)
+        for event_type, handler_name in self.event_handlers.items():
             self.app.register_event_handler(
                 event_type, getattr(self, handler_name))
 
     def open(self, event):
+        if not event.jdevice.which == self.index:
+            return
         self.joystick = sdl2.SDL_JoystickOpen(self.index)
+        self.joystick_id = sdl2.SDL_JoystickInstanceID(self.joystick)
         if self.joystick:
             self.logger.info(
                 "Joystick %d found: %s",
@@ -30,18 +33,13 @@ class BaseJoystick(sdl2ui.ext.Extension):
             self.logger.warning("Could not open joystick %d", self.index)
 
     def close(self, event):
-        if sdl2.SDL_JoystickGetAttached(self.joystick):
-            self.logger.info(
-                "Joystick %d removed: %s",
-                self.index, sdl2.SDL_JoystickName(self.joystick).decode())
-            sdl2.SDL_JoystickClose(self.joystick)
-
-    @property
-    def _all_event_handlers(self):
-        for cls in reversed(type(self).mro()):
-            if hasattr(cls, 'event_handlers'):
-                for k, v in cls.event_handlers.items():
-                    yield (k, v)
+        if event.type == sdl2.SDL_JOYDEVICEREMOVED and \
+                not event.jdevice.which == self.index:
+            return
+        self.logger.info(
+            "Joystick %d removed: %s",
+            self.index, sdl2.SDL_JoystickName(self.joystick).decode())
+        sdl2.SDL_JoystickClose(self.joystick)
 
 
 class BaseKeyboardJoystick(BaseJoystick):
@@ -52,6 +50,8 @@ class BaseKeyboardJoystick(BaseJoystick):
     }
 
     def button_down(self, event):
+        if not event.jbutton.which == self.joystick_id:
+            return
         key = self.mapping.get(event.jbutton.button)
         if key:
             self.app.keys[key] = sdl2.SDL_TRUE
