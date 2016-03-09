@@ -56,7 +56,7 @@ class App(object):
         assert self.width, "missing argument width"
         assert self.height, "missing argument height"
         assert self.window_flags, "missing argument window_flags"
-        self.running = True
+        self._running = True
         self.renderer = None
         self.window = None
         self.logger.info("Initializing application: %s", self.name)
@@ -88,6 +88,10 @@ class App(object):
         self._update_active_components()
         self.init()
         sdl2.SDL_ShowWindow(self.window)
+
+    @property
+    def running(self):
+        return self._running
 
     @property
     def _all_default_resources(self):
@@ -139,7 +143,7 @@ class App(object):
         sdl2.SDL_FlushEvents(0, 32767)
 
     def _quit(self, event):
-        self.running = False
+        self._running = False
 
     def _update_keys(self, event):
         self.keys = sdl2.SDL_GetKeyboardState(None)
@@ -195,7 +199,7 @@ class App(object):
         self.keys = sdl2.SDL_GetKeyboardState(None)
         self._render_components()
         try:
-            while self.running:
+            while self._running:
                 t1 = sdl2.timer.SDL_GetTicks()
                 self._poll_events()
                 if self._peek_components():
