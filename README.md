@@ -20,19 +20,17 @@ class MyApp(sdl2ui.App):
 
 
 logging.basicConfig(level=logging.DEBUG)
-app = Meldnafen(handlers=[sdl2ui.handler.DebuggerHandler])
-app.loop()
-del app
+MyApp.run(handlers=[sdl2ui.handler.DebuggerHandler])
 ```
 
 Each handler will have three main methods: `init()`, `peek()` and `draw()`:
 
-* `init()` is called as soon as the application is started (instanciated). You
+* `init()` is called as soon as the application is started (instantiated). You
   can set all kind of variables in your instance here before anything shows up.
 * `peek()` is called at every frame. The capture of the input can be made here.
   If peek() returns True, sdl2ui will re-draw the whole screen (using all the
   active handlers.
-* `draw()` is called everytime the application need to re-draw the screen.
+* `render()` is called every time the application need to re-draw the screen.
 
 ### Examples
 
@@ -55,7 +53,7 @@ class MainHandler(sdl2ui.Handler):
             return False
         return True
 
-    def draw(self):
+    def render(self):
         self.app.draw('background', x=0, y=0)
 ```
 
@@ -103,7 +101,7 @@ class MenuHandler(sdl2ui.Handler):
             return False
         return True
 
-    def draw(self):
+    def render(self):
         border = 10
         x, y = border, border
         for i, (label, _) in enumerate(self.menu_actions):

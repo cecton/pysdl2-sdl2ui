@@ -36,8 +36,8 @@ class App(object):
 
     @classmethod
     def run(cls, **kwargs):
-        instance = cls(**kwargs)
-        instance.loop()
+        app = cls(**kwargs)
+        app.loop()
 
     def __init__(self, **kwargs):
         self.name = kwargs.get('name', self.name)
