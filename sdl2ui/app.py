@@ -44,6 +44,7 @@ class App(object):
         self.width = kwargs.get('width', self.width)
         self.height = kwargs.get('height', self.height)
         self.zoom = kwargs.get('zoom', self.zoom)
+        self.viewport = sdl2.SDL_Rect()
         self.fps = kwargs.get('fps', self.fps)
         self.init_flags = kwargs.get('init_flags', self.init_flags)
         self.window_flags = kwargs.get('window_flags', self.window_flags)
@@ -106,8 +107,8 @@ class App(object):
             self.name.encode(),
             sdl2.SDL_WINDOWPOS_CENTERED,
             sdl2.SDL_WINDOWPOS_CENTERED,
-            self.width * self.zoom,
-            self.height * self.zoom,
+            self.width,
+            self.height,
             self.window_flags)
 
     def _get_renderer(self):
@@ -115,6 +116,8 @@ class App(object):
             sdl2.SDL_CreateRenderer(self.window, -1, self.renderer_flags)
         if self.zoom != 1:
             sdl2.SDL_RenderSetScale(renderer, self.zoom, self.zoom)
+        sdl2.SDL_RenderGetViewport(renderer, self.viewport)
+        self.logger.debug("Viewport: %dx%d", self.viewport.w, self.viewport.h)
         return renderer
 
     def _destroy_resources(self):
