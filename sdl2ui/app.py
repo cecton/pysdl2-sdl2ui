@@ -19,7 +19,7 @@ class App(object):
     name = "SDL2 Application"
     logger = logging.getLogger(__name__)
     init_flags = 0
-    window_flags = sdl2.SDL_WINDOW_HIDDEN
+    window_flags = 0
     renderer_flags = 0
     default_extensions = []
     default_handlers = {
