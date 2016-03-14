@@ -54,9 +54,6 @@ class App(object):
         self.components = OrderedDict()
         self.resources = {}
         self.tints = []
-        assert self.width, "missing argument width"
-        assert self.height, "missing argument height"
-        assert self.window_flags, "missing argument window_flags"
         self._running = True
         self.renderer = None
         self.window = None
