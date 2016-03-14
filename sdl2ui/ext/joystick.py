@@ -36,10 +36,11 @@ class BaseJoystick(sdl2ui.ext.Extension):
         if event.type == sdl2.SDL_JOYDEVICEREMOVED and \
                 not event.jdevice.which == self.index:
             return
-        self.logger.info(
-            "Joystick %d removed: %s",
-            self.index, sdl2.SDL_JoystickName(self.joystick).decode())
-        sdl2.SDL_JoystickClose(self.joystick)
+        if sdl2.SDL_JoystickGetAttached(self.joystick) == sdl2.SDL_TRUE:
+            self.logger.info(
+                "Joystick %d removed: %s",
+                self.index, sdl2.SDL_JoystickName(self.joystick).decode())
+            sdl2.SDL_JoystickClose(self.joystick)
 
 
 class BaseKeyboardJoystick(BaseJoystick):
