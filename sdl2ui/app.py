@@ -10,6 +10,7 @@ except ImportError as ex:
     if not hasattr(sys, "_gen_docs"):
         sys.exit("SDL2 library not found: %s" % ex)
 
+from sdl2ui.audio import AudioDevice
 from sdl2ui.component import Component
 from sdl2ui.ext import Extension
 from sdl2ui.resource import load as resource_loader
@@ -49,6 +50,7 @@ class App(object):
         self.init_flags = kwargs.get('init_flags', self.init_flags)
         self.window_flags = kwargs.get('window_flags', self.window_flags)
         self.renderer_flags = kwargs.get('renderer_flags', self.renderer_flags)
+        self.audio_devices = []
         self.extensions = {}
         self.event_handlers = {}
         self.components = OrderedDict()
@@ -117,12 +119,18 @@ class App(object):
         self.logger.debug("Viewport: %dx%d", self.viewport.w, self.viewport.h)
         return renderer
 
+    def _destroy_audio_devices(self):
+        for k in list(self.audio_devices):
+            k.close()
+            self.audio_devices.remove(k)
+
     def _destroy_resources(self):
         for k in list(self.resources.keys()):
             self.resources[k].close()
 
     def _clean_up(self):
         self.logger.info("Destroying application: %s", self.name)
+        self._destroy_audio_devices()
         self._destroy_resources()
         if self.renderer:
             sdl2.SDL_DestroyRenderer(self.renderer)
@@ -239,3 +247,11 @@ class App(object):
 
     def write(self, resource_key, *args, **kwargs):
         return self._call_resource(resource_key, 'write', *args, **kwargs)
+
+    def open_audio_device(self, audio_device):
+        if not issubclass(audio_device, AudioDevice):
+            raise ValueError(
+                "device argument must be a sub class of AudioDevice")
+        instance = audio_device(self)
+        self.audio_devices.append(instance)
+        return instance
