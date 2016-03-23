@@ -29,7 +29,9 @@ class App(object):
         sdl2.SDL_KEYUP: ['_update_keys'],
     }
     default_components = []
-    default_resources = [('font-6', 'font-6.png')]
+    default_resources = {
+        'font-6': 'font-6.png',
+    }
     width = None
     height = None
     zoom = 1
@@ -74,7 +76,7 @@ class App(object):
         sdl2.SDL_Init(self.init_flags)
         self.window = self._get_window()
         self.renderer = self._get_renderer()
-        for key, resource_file in self._all_default_resources:
+        for key, resource_file in self._all_default_resources.items():
             self.load_resource(key, resource_file)
         for key, resource_file in kwargs.get('resources', []):
             self.load_resource(key, resource_file)
@@ -95,10 +97,9 @@ class App(object):
 
     @property
     def _all_default_resources(self):
-        all_resources = []
-        for cls in type(self).mro():
-            if issubclass(cls, App):
-                all_resources.extend(vars(cls)['default_resources'])
+        all_resources = {}
+        for cls in reversed(type(self).mro()):
+            all_resources.update(vars(cls).get('default_resources', {}))
         return all_resources
 
     def _get_window(self):
