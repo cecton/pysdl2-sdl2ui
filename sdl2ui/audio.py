@@ -30,7 +30,7 @@ class AudioDevice(object):
             raise ValueError(
                 "can't open audio device: %s" % sdl2.SDL_GetError().decode())
         self.init()
-        sdl2.SDL_PauseAudioDevice(self.index, 0)
+        self.resume()
 
     def _audio_callback(self, userdata, buf, buflen):
         sdl2.SDL_memset(buf, 0, buflen)
@@ -52,9 +52,17 @@ class AudioDevice(object):
 
     def pause(self):
         sdl2.SDL_PauseAudioDevice(self.index, 1)
+        self.paused = True
 
     def resume(self):
         sdl2.SDL_PauseAudioDevice(self.index, 0)
+        self.paused = False
+
+    def toggle(self):
+        if self.paused:
+            self.resume()
+        else:
+            self.pause()
 
     def get_volume(self):
         return getattr(self, '_volume', sdl2.SDL_MIX_MAXVOLUME)

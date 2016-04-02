@@ -11,7 +11,7 @@ except ImportError as ex:
         sys.exit("SDL2 library not found: %s" % ex)
 
 from sdl2ui.audio import AudioDevice
-from sdl2ui.component import Component
+from sdl2ui.component import BaseComponent
 from sdl2ui.ext import Extension
 from sdl2ui.resource import load as resource_loader
 
@@ -25,10 +25,7 @@ class App(object):
     default_extensions = []
     default_handlers = {
         sdl2.SDL_QUIT: ['_quit'],
-        sdl2.SDL_KEYDOWN: ['_update_keys'],
-        sdl2.SDL_KEYUP: ['_update_keys'],
     }
-    default_components = []
     default_resources = {
         'font-6': 'font-6.png',
     }
@@ -56,6 +53,7 @@ class App(object):
         self.extensions = {}
         self.event_handlers = {}
         self.components = OrderedDict()
+        self.componenents_activation = OrderedDict()
         self.resources = {}
         self.tints = []
         self._running = True
@@ -74,6 +72,7 @@ class App(object):
         for extension_class in kwargs.get('extensions', []):
             self.add_extension(extension_class)
         sdl2.SDL_Init(self.init_flags)
+        self.keys = sdl2.SDL_GetKeyboardState(None)
         self.window = self._get_window()
         self.renderer = self._get_renderer()
         for key, resource_file in self._all_default_resources.items():
@@ -83,12 +82,8 @@ class App(object):
         self.resources['font-6'].make_font(4, 11,
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]~-_+@:/'., ")
-        for component_class in kwargs.get('components', []):
-            self.add_component(component_class)
-        for component_class in self.default_components:
-            self.add_component(component_class)
-        self._update_active_components()
         self.init()
+        self._update_active_components()
         sdl2.SDL_ShowWindow(self.window)
 
     @property
@@ -154,9 +149,6 @@ class App(object):
     def _quit(self, event):
         self._running = False
 
-    def _update_keys(self, event):
-        self.keys = sdl2.SDL_GetKeyboardState(None)
-
     def _poll_events(self):
         event = sdl2.SDL_Event()
         while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
@@ -165,9 +157,20 @@ class App(object):
                     event_handler(event)
 
     def _update_active_components(self):
+        has_changed = False
+        for key, active in self.componenents_activation.items():
+            component = self.components[key]
+            if not component.active == active:
+                has_changed = True
+                component.active = active
+                if active:
+                    component.activate()
+                else:
+                    component.deactivate()
         self._active_components = [
             x for x in self.components.values() if x.active
         ]
+        return has_changed
 
     def _peek_components(self):
         return any(x.peek() for x in self._active_components)
@@ -180,17 +183,20 @@ class App(object):
 
     def add_extension(self, extension_class):
         assert issubclass(extension_class, Extension), \
-            "must be an Extension class"
+            "must be an %s class" % Extension
         if extension_class in self.extensions:
             raise ValueError("extension already exists")
         self.extensions[extension_class] = extension_class(self)
 
-    def add_component(self, component_class):
-        assert issubclass(component_class, Component), \
-            "must be a Component class"
-        if component_class in self.components:
+    def add_component(self, key, component):
+        assert isinstance(component, BaseComponent), \
+            "must be a %s instance" % BaseComponent
+        if key in self.components:
             raise ValueError("component already exists")
-        self.components[component_class] = component_class(self)
+        self.components[key] = component
+        component.app = self
+        component.name = key
+        component.init()
 
     def register(self, attr, object):
         if hasattr(self, attr):
@@ -205,13 +211,12 @@ class App(object):
 
     def loop(self):
         dt = int(1000 / self.fps)
-        self.keys = sdl2.SDL_GetKeyboardState(None)
         self._render_components()
         try:
             while self._running:
                 t1 = sdl2.timer.SDL_GetTicks()
                 self._poll_events()
-                if self._peek_components():
+                if self._peek_components() or self._update_active_components():
                     self._render_components()
                 t2 = sdl2.timer.SDL_GetTicks()
                 delay = dt - (t2 - t1)

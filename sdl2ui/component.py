@@ -1,28 +1,12 @@
 from __future__ import division
 
+import operator
 import sdl2
 
 
-class Component(object):
-    default_active = True
-
-    def get_active(self):
-        return self._active
-
-    def set_active(self, value):
-        self._active = value
-        self.app._update_active_components()
-        if value:
-            self.activate()
-        else:
-            self.deactivate()
-
-    active = property(get_active, set_active)
-
-    def __init__(self, app):
-        self.app = app
-        self._active = self.default_active
-        self.init()
+class BaseComponent(object):
+    def __init__(self):
+        self.active = False
 
     def init(self):
         pass
@@ -39,13 +23,51 @@ class Component(object):
     def deactivate(self):
         pass
 
+    def show(self):
+        self.app.componenents_activation[self.name] = True
+
+    def hide(self):
+        self.app.componenents_activation[self.name] = False
+
     def toggle(self):
-        self.active = not self.active
-        return self.active
+        if self.active:
+            self.hide()
+        else:
+            self.show()
+
+    def register_event_handler(self, event_type, event_handler):
+        self.app.register_event_handler(
+            event_type,
+            lambda e: self.active and event_handler(e))
 
 
-class DebuggerComponent(Component):
-    default_active = False
+class Component(BaseComponent):
+    props_operator = operator.eq
+
+    def __init__(self, **props):
+        BaseComponent.__init__(self)
+        self.props = props
+        self._render = False
+
+    def set_state(self, props):
+        for k, v in props.items():
+            if (k not in self.props or
+                    not self.props_operator(self.props[k], v)):
+                self.props[k] = v
+                self._render = True
+
+    def peek(self):
+        if not self._render:
+            return False
+        self._render = False
+        return True
+
+
+class ImmutableComponent(Component):
+    props_operator = operator.is_
+
+
+class Debugger(BaseComponent):
     refresh_delay = 0.1
 
     def init(self):
