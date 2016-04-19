@@ -40,11 +40,9 @@ class App(Component):
         self.resources = {}
         self.tints = []
         self._running = True
-        self.renderer = None
-        self.window = None
         self.logger.info("Initializing application: %s", self.name)
-        self.register_event_handler(sdl2.SDL_QUIT, self._quit)
         sdl2.SDL_Init(self.props.get('init_flags', 0))
+        self.register_event_handler(sdl2.SDL_QUIT, self._quit)
         self.keys = sdl2.SDL_GetKeyboardState(None)
         self.window = self._get_window()
         self.renderer = self._get_renderer()

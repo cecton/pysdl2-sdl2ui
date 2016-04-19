@@ -7,11 +7,6 @@ import sdl2ui
 
 class AudioDevice(sdl2ui.Component):
     logger = logging.getLogger(__name__)
-    frequency = None
-    format = None
-    channels = None
-    chunksize = None
-    allowed_changes = 0
 
     def init(self):
         self.c_callback = sdl2.SDL_AudioCallback(self._audio_callback)
@@ -23,7 +18,8 @@ class AudioDevice(sdl2ui.Component):
             self.props['channels'], self.props['chunksize'])
         self.logger.info("Opening audio device...")
         self.index = sdl2.SDL_OpenAudioDevice(
-            None, 0, want, self.audio_spec, self.allowed_changes)
+            None, 0, want, self.audio_spec,
+            self.props.get('allowed_changes', 0))
         if self.index == 0:
             raise ValueError(
                 "can't open audio device: %s" % sdl2.SDL_GetError().decode())
