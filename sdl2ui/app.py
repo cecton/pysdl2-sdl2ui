@@ -36,11 +36,9 @@ class App(Component):
     def __init__(self, **options):
         Component.__init__(self, self, None, **options)
         self.viewport = sdl2.SDL_Rect()
-        self.audio_devices = []
         self._components_activation = OrderedDict()
         self.resources = {}
         self.tints = []
-        self._touched = True
         self._running = True
         self.renderer = None
         self.window = None
@@ -56,7 +54,6 @@ class App(Component):
             ")[]~-_+@:/'., ")
         self.enable()
         self.init()
-        self._update_active_components()
         sdl2.SDL_ShowWindow(self.window)
 
     def touch(self):
@@ -166,7 +163,7 @@ class App(Component):
             self._active_components = _get_active_components_recursively(self)
             self._components_to_peek = None
             self._components_to_render = None
-        return has_changed
+            self.touch()
 
     def _peek_components(self):
         # NOTE: any() used on a generator returns as soon as it finds a True
@@ -205,12 +202,8 @@ class App(Component):
             while self._running:
                 t1 = sdl2.timer.SDL_GetTicks()
                 self._poll_events()
-                # NOTE: any() on a list will force the evaluation of the two
-                #       operands. Here, we need all the functions to be called.
-                if any([
-                        self._peek_components(),
-                        self._update_active_components(),
-                    ]):
+                self._update_active_components()
+                if self._peek_components():
                     self._render_components()
                 t2 = sdl2.timer.SDL_GetTicks()
                 delay = dt - (t2 - t1)
