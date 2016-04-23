@@ -14,7 +14,6 @@ class Mixer(sdl2ui.Component):
     logger = logging.getLogger(__name__)
 
     def init(self):
-        self._closed = False
         self.logger.info("Initializing mixer component...")
         status = sdlmixer.Mix_OpenAudio(
             self.props.get('frequency', sdlmixer.MIX_DEFAULT_FREQUENCY),
@@ -24,65 +23,40 @@ class Mixer(sdl2ui.Component):
         if status != 0:
             raise Exception(
                 "can't open mixer: %s" % sdlmixer.Mix_GetError().decode())
-        self.app.register('play', self.play)
-        self.app.register_event_handler(sdl2.SDL_QUIT, self.close)
+        self.app.register_event_handler(sdl2.SDL_QUIT, self.quit)
 
-    @property
-    def closed(self):
-        return self._closed
+    def quit(self, event):
+        self.logger.info("Closing mixer...")
+        sdlmixer.Mix_HaltChannel(-1)
+        sdlmixer.Mix_CloseAudio()
 
-    def close(self, event):
-        if not self.closed:
-            self._closed = True
-            self.logger.info("Closing mixer...")
-            sdlmixer.Mix_HaltChannel(-1)
-            sdlmixer.Mix_CloseAudio()
-
-    def play(self, resource_key, channel=-1, loops=0):
-        if self.closed:
-            raise Exception("The mixer has been closed")
-        return Channel(self, self.app.resources[resource_key], channel, loops)
+    def open(self, resource, loops=0):
+        return self.add_component(Channel,
+            audio=self.app.resources[resource],
+            loops=loops)
 
 
-class Channel(object):
-    def __init__(self, mixer, audio, channel=-1, loops=0):
-        self.mixer = mixer
-        self.audio = audio
-        self.paused = False
-        self.index = sdlmixer.Mix_PlayChannel(channel, audio.sample, loops)
+class Channel(sdl2ui.Component):
+    def init(self):
+        self.channel = None
 
     def halt(self):
-        if self.mixer.closed:
-            raise Exception("The mixer has been closed")
-        sdlmixer.Mix_HaltChannel(self.index)
+        sdlmixer.Mix_HaltChannel(self.channel)
 
-    def pause(self):
-        if self.mixer.closed:
-            raise Exception("The mixer has been closed")
-        sdlmixer.Mix_Pause(self.index)
-        self.paused = True
+    def deactivate(self):
+        sdlmixer.Mix_Pause(self.channel)
 
-    def resume(self):
-        if self.mixer.closed:
-            raise Exception("The mixer has been closed")
-        sdlmixer.Mix_Resume(self.index)
-        self.paused = False
-
-    def toggle(self):
-        if self.paused:
-            self.resume()
-        else:
-            self.pause()
+    def activate(self):
+        if self.channel is None:
+            self.channel = sdlmixer.Mix_PlayChannel(
+                -1, self.props['audio'].sample, self.props.get('loops', 0))
+        sdlmixer.Mix_Resume(self.channel)
 
     def get_volume(self):
-        if self.mixer.closed:
-            raise Exception("The mixer has been closed")
-        return sdlmixer.Mix_Volume(self.index, -1)
+        return sdlmixer.Mix_Volume(self.channel, -1)
 
     def set_volume(self, value):
-        if self.mixer.closed:
-            raise Exception("The mixer has been closed")
-        sdlmixer.Mix_Volume(self.index, int(value))
+        sdlmixer.Mix_Volume(self.channel, int(value))
 
     volume = property(get_volume, set_volume)
 

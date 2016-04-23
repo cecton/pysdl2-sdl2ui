@@ -186,11 +186,6 @@ class App(Component):
     def toggle_component(self, component):
         self._components_activation[component] = not component.active
 
-    def register(self, attr, object):
-        if hasattr(self, attr):
-            raise AttributeError("attribute already exists")
-        setattr(self, attr, object)
-
     def init(self):
         pass
 
