@@ -47,7 +47,7 @@ class App(Component):
         self.window = self._get_window()
         self.renderer = self._get_renderer()
         self.load_resource('font-6', 'font-6.png')
-        self.resources['font-6'].make_font(4, 11,
+        self.resources['font-6'].make_font(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]~-_+@:/'., ")
         self.enable()

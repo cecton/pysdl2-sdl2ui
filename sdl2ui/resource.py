@@ -1,3 +1,5 @@
+from __future__ import division
+
 import __main__
 from contextlib import contextmanager
 import os
@@ -120,10 +122,10 @@ class Image(BaseResource):
         finally:
             sdl2.SDL_SetTextureColorMod(self.texture, 0xff, 0xff, 0xff, 0xff)
 
-    def make_font(self, w, h, mapping):
+    def make_font(self, mapping):
         self.font = mapping
-        self.font_w = w
-        self.font_h = h
+        self.font_w = int(self.rect.w / len(mapping))
+        self.font_h = self.rect.h
 
 
 def load(app, filename):
