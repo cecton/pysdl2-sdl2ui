@@ -194,8 +194,8 @@ class App(Component):
         try:
             while self._running:
                 t1 = sdl2.timer.SDL_GetTicks()
-                self._poll_events()
                 self._update_active_components()
+                self._poll_events()
                 if self._peek_components():
                     self._render_components()
                 t2 = sdl2.timer.SDL_GetTicks()
