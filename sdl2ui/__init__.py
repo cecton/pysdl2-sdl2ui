@@ -80,4 +80,9 @@ class Component(object):
             child.poll_safe(event)
 
 
+class NullComponent(Component):
+    def __bool__(self):
+        return False
+
+
 from sdl2ui.app import App
