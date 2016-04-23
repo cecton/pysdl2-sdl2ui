@@ -10,7 +10,7 @@ import sdl2ui
 
 PATH = ['.']
 if hasattr(__main__, '__file__'):
-    PATH.append(os.path.dirname(__main__.__file__))
+    PATH.append(os.path.join(os.path.dirname(__main__.__file__), 'data'))
 PATH.append(os.path.join(os.path.dirname(sdl2ui.__file__), 'data'))
 
 
