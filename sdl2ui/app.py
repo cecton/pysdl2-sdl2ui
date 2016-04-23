@@ -51,7 +51,12 @@ class App(Component):
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?("
             ")[]~-_+@:/'., ")
         self.enable()
-        self.init()
+        try:
+            self.init()
+        except:
+            self.quit()
+            self._clean_up()
+            raise
         sdl2.SDL_ShowWindow(self.window)
 
     def touch(self):
