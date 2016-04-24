@@ -1,8 +1,8 @@
-from __future__ import division
 
 from collections import OrderedDict
 from contextlib import contextmanager
 import ctypes
+import itertools
 import logging
 try:
     import sdl2
@@ -39,6 +39,7 @@ class App(Component):
         self._components_activation = OrderedDict()
         self.resources = {}
         self.tints = []
+        self.timers = []
         self._running = True
         self.logger.info("Initializing application: %s", self.name)
         sdl2.SDL_Init(self.props.get('init_flags', 0))
@@ -124,6 +125,17 @@ class App(Component):
         while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
             self.poll(event)
 
+    def _call_timers(self, ticks):
+        if self.timers:
+            i = 0
+            for time, callback in self.timers:
+                if time > ticks:
+                    break
+                i += 1
+                callback()
+            if i > 0:
+                self.timers = self.timers[i:]
+
     @property
     def active_components(self):
         return self._active_components
@@ -201,6 +213,7 @@ class App(Component):
                 t1 = sdl2.timer.SDL_GetTicks()
                 self._update_active_components()
                 self._poll_events()
+                self._call_timers(t1)
                 if self._peek_components():
                     self._render_components()
                 t2 = sdl2.timer.SDL_GetTicks()
@@ -238,3 +251,7 @@ class App(Component):
 
     def write(self, resource_key, *args, **kwargs):
         return self._call_resource(resource_key, 'write', *args, **kwargs)
+
+    def add_timer(self, interval, callback):
+        ticks = sdl2.timer.SDL_GetTicks() + interval
+        self.timers.append((ticks, callback))

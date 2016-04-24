@@ -70,6 +70,9 @@ class KeyboardJoystick(sdl2ui.Component):
             self.removed)
         self.register_event_handler(
             sdl2.SDL_JOYBUTTONDOWN, self.button_down)
+        self.set_state({
+            'keyboard_mapping': {},
+        })
 
     def added(self, event):
         self.joystick = self.props['manager'].get(event.jdevice.which)
@@ -83,6 +86,11 @@ class KeyboardJoystick(sdl2ui.Component):
             return
         self.joystick.close()
 
+    def load(self, keyboard_mapping):
+        self.set_state({
+            'keyboard_mapping': keyboard_mapping,
+        })
+
     def _push_keyboard_event(self, key):
         self.event.type = sdl2.SDL_KEYDOWN
         self.event.key.keysym.scancode = key
@@ -92,7 +100,7 @@ class KeyboardJoystick(sdl2ui.Component):
     def button_down(self, event):
         if not event.jbutton.which == self.joystick.id:
             return
-        key = self.props['keyboard_mapping'].get(event.jbutton.button)
+        key = self.state['keyboard_mapping'].get(event.jbutton.button)
         if key:
             self.app.keys[key] = sdl2.SDL_TRUE
             self._push_keyboard_event(key)
