@@ -161,8 +161,12 @@ class App(Component):
         return self._components_to_render
 
     def _update_active_components(self):
+        if not self._components_activation:
+            return
         has_changed = False
-        for component, active in self._components_activation.items():
+        activations = list(self._components_activation.items())
+        self._components_activation.clear()
+        for component, active in activations:
             if not component.active == active:
                 has_changed = True
                 component.active = active
