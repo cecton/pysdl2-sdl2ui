@@ -12,6 +12,7 @@ class Joystick(object):
         self.joystick = None
         self.id = -1
         self.name = None
+        self.guid = None
 
     @property
     def opened(self):
@@ -24,13 +25,15 @@ class Joystick(object):
         if self.opened:
             return
         self.joystick = sdl2.SDL_JoystickOpen(self.index)
-        self.id = sdl2.SDL_JoystickInstanceID(self.joystick)
-        self.name = sdl2.SDL_JoystickName(self.joystick).decode()
         if not self.opened:
             self.logger.warning("Could not open joystick %d", self.index)
         else:
             self.logger.info(
                 "Joystick %d opened: %s", self.index, self.name)
+            self.id = sdl2.SDL_JoystickInstanceID(self.joystick)
+            self.name = sdl2.SDL_JoystickName(self.joystick).decode()
+            guid = sdl2.SDL_JoystickGetGUID(self.joystick)
+            self.guid = "".join(map("{:02x}".format, guid.data))
 
     def close(self):
         if not self.opened:
@@ -40,6 +43,7 @@ class Joystick(object):
         self.joystick = None
         self.id = -1
         self.name = None
+        self.guid = None
 
 
 class JoystickManager(sdl2ui.Component):
