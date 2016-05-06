@@ -50,14 +50,29 @@ class JoystickManager(sdl2ui.Component):
         self.joysticks = {}
         sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_JOYSTICK)
         self.app.register_event_handler(sdl2.SDL_QUIT, self.quit)
+        self.app.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.added)
+        self.app.register_event_handler(sdl2.SDL_JOYDEVICEREMOVED, self.removed)
+
+    def added(self, event):
+        # NOTE: automatically instantiate Joystick, the joystick will not
+        #       be opened anyway
+        # NOTE: event.jdevice.which is the joystick index during a
+        #       JOYDEVICEADDED event
+        self.joysticks[event.jdevice.which] = Joystick(event.jdevice.which)
+
+    def removed(self, event):
+        # NOTE: automatically drop the Joystick instance so we can keep an
+        #       accurate list of the joystick available. It will not be deleted
+        #       anyway if it is referenced somewhere else.
+        # NOTE: event.jdevice.which is the joystick id during a
+        #       JOYDEVICEREMOVED event (not index!)
+        for index, joystick in list(self.joysticks.items()):
+            if joystick.id == event.jdevice.which:
+                self.joysticks.pop(index)
 
     def quit(self, event):
         for joystick in self.joysticks.values():
             joystick.close()
 
     def get(self, index):
-        try:
-            return self.joysticks[index]
-        except KeyError:
-            self.joysticks[index] = Joystick(index)
-            return self.joysticks[index]
+        return self.joysticks[index]
