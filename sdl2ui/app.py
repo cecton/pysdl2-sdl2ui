@@ -110,7 +110,7 @@ class App(Component):
             sdl2.SDL_DestroyWindow(self.window)
         sdl2.SDL_Quit()
 
-    def quit(self):
+    def quit(self, exception=None):
         sdl2.SDL_PumpEvents()
         sdl2.SDL_FlushEvents(0, 32767)
         event = sdl2.SDL_Event()
@@ -224,8 +224,8 @@ class App(Component):
                 delay = dt - (t2 - t1)
                 if delay > 0:
                     sdl2.timer.SDL_Delay(delay)
-        except:
-            self.quit()
+        except BaseException as exception:
+            self.quit(exception)
             raise
         finally:
             self._clean_up()
