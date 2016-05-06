@@ -44,6 +44,7 @@ class App(Component):
         self.logger.info("Initializing application: %s", self.name)
         sdl2.SDL_Init(self.props.get('init_flags', 0))
         self.register_event_handler(sdl2.SDL_QUIT, self._quit)
+        self.register_event_handler(sdl2.SDL_WINDOWEVENT, self._window_event)
         self.keys = sdl2.SDL_GetKeyboardState(None)
         self.window = self._get_window()
         self.renderer = self._get_renderer()
@@ -116,6 +117,9 @@ class App(Component):
         event = sdl2.SDL_Event()
         event.type = sdl2.SDL_QUIT
         self.poll_safe(event)
+
+    def _window_event(self, event):
+        self.touch()
 
     def _quit(self, event):
         self._running = False
