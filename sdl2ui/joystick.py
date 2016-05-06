@@ -11,8 +11,9 @@ class Joystick(object):
         self.index = index
         self.joystick = None
         self.id = -1
-        self.name = None
-        self.guid = None
+        self.name = sdl2.SDL_JoystickNameForIndex(index).decode()
+        guid = sdl2.SDL_JoystickGetDeviceGUID(index)
+        self.guid = "".join(map("{:02x}".format, guid.data))
 
     @property
     def opened(self):
@@ -42,8 +43,6 @@ class Joystick(object):
         self.logger.info("Joystick %d removed: %s", self.index, self.name)
         self.joystick = None
         self.id = -1
-        self.name = None
-        self.guid = None
 
 
 class JoystickManager(sdl2ui.Component):
