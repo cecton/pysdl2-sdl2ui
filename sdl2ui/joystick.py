@@ -76,3 +76,9 @@ class JoystickManager(sdl2ui.Component):
 
     def get(self, index):
         return self.joysticks[index]
+
+    def find(self, id):
+        for joystick in self.joysticks.values():
+            if joystick.id == id:
+                return joystick
+        return None
