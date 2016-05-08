@@ -15,11 +15,15 @@ class Component(object):
     def __init__(self, app, parent, **props):
         self.app = app
         self.parent = parent
-        self.active = False
+        self._active = False
         self.props = props
         self.components = []
         self.event_handlers = {}
         self.state = {}
+
+    @property
+    def active(self):
+        return self._active
 
     def set_state(self, state):
         for k, v in state.items():
@@ -51,11 +55,8 @@ class Component(object):
         self.event_handlers.setdefault(event_type, []).append(handler)
 
     def add_component(self, component, **props):
-        assert issubclass(component, Component), \
-            "must be a %s subclass" % Component
-        instance = component(self.app, self, **props)
+        instance = self.app.load_component(component, self, props)
         self.components.append(instance)
-        instance.init()
         return instance
 
     def poll(self, event):

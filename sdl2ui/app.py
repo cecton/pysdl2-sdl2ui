@@ -23,6 +23,20 @@ def _get_active_components_recursively(component):
     return [component] + active_childs
 
 
+def _deep_call(obj, method, args=(), kwargs={}):
+    for cls in type(obj).mro():
+        if hasattr(cls, method):
+            getattr(cls, method)(obj, *args, **kwargs)
+
+
+def _deep_call_or(obj, method, args=(), kwargs={}):
+    result = False
+    for cls in type(obj).mro():
+        if hasattr(cls, method):
+            result |= getattr(cls, method)(obj, *args, **kwargs)
+    return result
+
+
 class App(Component):
     name = "SDL2 Application"
     logger = logging.getLogger(__name__)
@@ -54,7 +68,7 @@ class App(Component):
             ")[]~-_+@:/'., ")
         self.enable()
         try:
-            self.init()
+            _deep_call(self, 'init')
         except:
             self.quit()
             self._clean_up()
@@ -140,29 +154,16 @@ class App(Component):
             if i > 0:
                 self.timers = self.timers[i:]
 
+    def load_component(self, component, parent, props):
+        assert issubclass(component, Component), \
+            "must be a %s subclass" % Component
+        instance = component(self, parent, **props)
+        instance.init()
+        return instance
+
     @property
     def active_components(self):
         return self._active_components
-
-    @property
-    def components_to_peek(self):
-        if self._components_to_peek is None:
-            self._components_to_peek = [
-                component
-                for component in self._active_components
-                if hasattr(component, 'peek')
-            ]
-        return self._components_to_peek
-
-    @property
-    def components_to_render(self):
-        if self._components_to_render is None:
-            self._components_to_render = [
-                component
-                for component in self._active_components
-                if hasattr(component, 'render')
-            ]
-        return self._components_to_render
 
     def _update_active_components(self):
         if not self._components_activation:
@@ -173,33 +174,31 @@ class App(Component):
         for component, active in activations:
             if not component.active == active:
                 has_changed = True
-                component.active = active
+                component._active = active
                 if active:
-                    component.activate()
+                    _deep_call(component, 'activate')
                     self.logger.debug("Component has been activated: %r",
                         component)
                 else:
-                    component.deactivate()
+                    _deep_call(component, 'deactivate')
                     self.logger.debug("Component has been deactivated: %r",
                         component)
         if has_changed:
             self._active_components = _get_active_components_recursively(self)
-            self._components_to_peek = None
-            self._components_to_render = None
             self.touch()
 
     def _peek_components(self):
         # NOTE: any() used on a generator returns as soon as it finds a True
         #       operand. Here, we need all the peek() methods to be called.
         return any([
-            component.peek()
-            for component in self.components_to_peek
+            _deep_call_or(component, 'peek')
+            for component in self._active_components
         ])
 
     def _render_components(self):
         sdl2.SDL_RenderClear(self.renderer)
-        for component in self.components_to_render:
-            component.render()
+        for component in self._active_components:
+            _deep_call(component, 'render')
         sdl2.SDL_RenderPresent(self.renderer)
 
     def enable_component(self, component):
@@ -210,9 +209,6 @@ class App(Component):
 
     def toggle_component(self, component):
         self._components_activation[component] = not component.active
-
-    def init(self):
-        pass
 
     def loop(self):
         dt = int(1000 / self.props.get('fps', 60))
