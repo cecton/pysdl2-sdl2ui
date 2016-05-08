@@ -113,7 +113,7 @@ class App(Component):
 
     def quit(self, exception=None):
         sdl2.SDL_PumpEvents()
-        sdl2.SDL_FlushEvents(0, 32767)
+        sdl2.SDL_FlushEvents(sdl2.SDL_FIRSTEVENT, sdl2.SDL_LASTEVENT)
         event = sdl2.SDL_Event()
         event.type = sdl2.SDL_QUIT
         self.poll_safe(event)
