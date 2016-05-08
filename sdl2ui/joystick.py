@@ -1,3 +1,4 @@
+import ctypes
 import logging
 import sdl2
 
@@ -82,3 +83,17 @@ class JoystickManager(sdl2ui.Component):
             if joystick.id == id:
                 return joystick
         return None
+
+    def reload(self):
+        sdl2.SDL_QuitSubSystem(sdl2.SDL_INIT_JOYSTICK)
+        self.joysticks.clear()
+        sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_JOYSTICK)
+        sdl2.SDL_PumpEvents()
+        event = sdl2.SDL_Event()
+        while sdl2.SDL_PeepEvents(
+                ctypes.byref(event),
+                1,
+                sdl2.SDL_GETEVENT,
+                sdl2.SDL_JOYDEVICEADDED,
+                sdl2.SDL_JOYDEVICEADDED) != 0:
+            self.added(event)
