@@ -8,13 +8,15 @@ import sdl2ui
 class Joystick(object):
     logger = logging.getLogger(__name__)
 
-    def __init__(self, index):
+    def __init__(self, index, existing_guids=[]):
         self.index = index
         self.joystick = None
         self.id = -1
         self.name = sdl2.SDL_JoystickNameForIndex(index).decode()
         guid = sdl2.SDL_JoystickGetDeviceGUID(index)
         self.guid = "".join(map("{:02x}".format, guid.data))
+        if self.guid in existing_guids:
+            self.guid += "-{}".format(index)
 
     @property
     def opened(self):
@@ -31,11 +33,9 @@ class Joystick(object):
             self.logger.warning("Could not open joystick %d", self.index)
         else:
             self.logger.info(
-                "Joystick %d opened: %s", self.index, self.name)
+                "Joystick %d opened: %s (%s)",
+                self.index, self.name, self.guid)
             self.id = sdl2.SDL_JoystickInstanceID(self.joystick)
-            self.name = sdl2.SDL_JoystickName(self.joystick).decode()
-            guid = sdl2.SDL_JoystickGetGUID(self.joystick)
-            self.guid = "".join(map("{:02x}".format, guid.data))
 
     def close(self):
         if not self.opened:
@@ -59,7 +59,9 @@ class JoystickManager(sdl2ui.Component):
         #       be opened anyway
         # NOTE: event.jdevice.which is the joystick index during a
         #       JOYDEVICEADDED event
-        self.joysticks[event.jdevice.which] = Joystick(event.jdevice.which)
+        self.joysticks[event.jdevice.which] = Joystick(
+            event.jdevice.which,
+            [x.guid for x in self.joysticks.values()])
 
     def removed(self, event):
         # NOTE: automatically drop the Joystick instance so we can keep an
