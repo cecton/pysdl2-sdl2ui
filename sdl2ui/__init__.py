@@ -8,13 +8,11 @@ __version__ = '0.1.14'
 __author__ = 'Cecile Tonglet'
 
 
-class Component(object):
+class Component:
     logger = logging.getLogger(__name__)
     eq_operator = operator.eq
 
-    def __init__(self, app, parent, **props):
-        self.app = app
-        self.parent = parent
+    def __init__(self, **props):
         self._active = False
         self.props = props
         self.components = []
