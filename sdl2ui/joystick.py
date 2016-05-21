@@ -8,8 +8,8 @@ import sdl2ui
 class Joystick(object):
     logger = logging.getLogger(__name__)
 
-    def __init__(self, index, existing_guids=[]):
-        self.index = index
+    def __init__(self, index, manager, existing_guids=[]):
+        self.manager = manager
         self.joystick = None
         self.id = -1
         self.name = sdl2.SDL_JoystickNameForIndex(index).decode()
@@ -17,6 +17,10 @@ class Joystick(object):
         self.guid = "".join(map("{:02x}".format, guid.data))
         if self.guid in existing_guids:
             self.guid += "-{}".format(index)
+
+    @property
+    def index(self):
+        return self.manager.joysticks.index(self)
 
     @property
     def opened(self):
@@ -48,7 +52,7 @@ class Joystick(object):
 
 class JoystickManager(sdl2ui.Component):
     def init(self):
-        self.joysticks = {}
+        self.joysticks = []
         sdl2.SDL_InitSubSystem(sdl2.SDL_INIT_JOYSTICK)
         self.app.register_event_handler(sdl2.SDL_QUIT, self.quit)
         self.app.register_event_handler(sdl2.SDL_JOYDEVICEADDED, self.added)
@@ -59,9 +63,12 @@ class JoystickManager(sdl2ui.Component):
         #       be opened anyway
         # NOTE: event.jdevice.which is the joystick index during a
         #       JOYDEVICEADDED event
-        self.joysticks[event.jdevice.which] = Joystick(
+        assert event.jdevice.which == len(self.joysticks), \
+            "bug: inconsistent joystick indexes"
+        self.joysticks.append(Joystick(
             event.jdevice.which,
-            [x.guid for x in self.joysticks.values()])
+            self,
+            [x.guid for x in self.joysticks]))
 
     def removed(self, event):
         # NOTE: automatically drop the Joystick instance so we can keep an
@@ -69,19 +76,19 @@ class JoystickManager(sdl2ui.Component):
         #       anyway if it is referenced somewhere else.
         # NOTE: event.jdevice.which is the joystick id during a
         #       JOYDEVICEREMOVED event (not index!)
-        for index, joystick in list(self.joysticks.items()):
+        for joystick in list(self.joysticks):
             if joystick.id == event.jdevice.which:
-                self.joysticks.pop(index)
+                self.joysticks.remove(joystick)
 
     def quit(self, event):
-        for joystick in self.joysticks.values():
+        for joystick in self.joysticks:
             joystick.close()
 
     def get(self, index):
         return self.joysticks[index]
 
     def find(self, id):
-        for joystick in self.joysticks.values():
+        for joystick in self.joysticks:
             if joystick.id == id:
                 return joystick
         return None
