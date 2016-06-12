@@ -103,7 +103,7 @@ class App(Component):
 
     def _get_renderer(self):
         renderer = \
-            sdl2.SDL_CreateRenderer(self.window, -1, self.props.get('renderer_flags'))
+            sdl2.SDL_CreateRenderer(self.window, -1, self.props.get('renderer_flags', 0))
         zoom = self.props.get('zoom', 1)
         if zoom is not 1:
             sdl2.SDL_RenderSetScale(renderer, zoom, zoom)
